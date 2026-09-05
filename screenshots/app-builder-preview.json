@@ -1,0 +1,36 @@
+{
+  "url": "http://127.0.0.1:8080/",
+  "viewports": {
+    "desktop": {
+      "width": 1280,
+      "height": 800,
+      "status": 200,
+      "title": "Umanga Rimal — Photography · Cinematography",
+      "hasCanvas": false,
+      "bodyTextLen": 3771,
+      "bodyTextHash": "8753201a7d5de819ee5b66c7a610f6555f0803bc5dd7ec91c4abd707ec5104a4",
+      "bodyTextPrefix": "UMANGA RIMAL REC CAM 01 FRAME 001 24 FPS · 1/50 · F/2.8 ISO 400 ",
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/app-builder-preview.png"
+    },
+    "mobile": {
+      "width": 390,
+      "height": 844,
+      "status": 200,
+      "title": "Umanga Rimal — Photography · Cinematography",
+      "hasCanvas": false,
+      "bodyTextLen": 3669,
+      "bodyTextHash": "c0c227d6e3238845f6b8a08f799b30b1d1d966aad92d9b44ef5604c5f47068e0",
+      "bodyTextPrefix": "UMANGA RIMAL Umanga Rimal PHOTOGRAPHY CINEMATOGRAPHY THE LAB ABO",
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/app-builder-preview-mobile.png"
+    }
+  },
+  "brandWarnings": [],
+  "authWarnings": [],
+  "verdictFile": "/workspace/screenshots/app-builder-preview.json"
+}
