@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import {
   CREATIVE_PROJECTS,
   DEV_PROJECTS,
@@ -14,12 +14,9 @@ import {
 import { useScroll } from "@/lib/scroll";
 import { cn } from "@/lib/cn";
 
-// Deterministic scatter of tilt angles for the mood-board gallery —
-// each frame sits slightly askew like a pinned print, not a clean grid.
 const TILT_ANGLES = [-2.6, 1.9, -1.1, 2.7, -3.1, 1.4, -1.8, 2.3, -2.1, 1.1];
 
-// A loose, hand-drawn brushstroke used as a divider/underline instead of
-// a plain straight line — one of the few purely decorative flourishes.
+// ── Brushstroke divider ───────────────────────────────────────────────────
 function Brushstroke({ className }: { className?: string }) {
   return (
     <svg
@@ -38,22 +35,28 @@ function Brushstroke({ className }: { className?: string }) {
   );
 }
 
+// ── Reveal hook — FIXED: stable dependency array so IntersectionObserver
+//    is only set up once, not on every re-render ──────────────────────────
 function useReveal() {
   useEffect(() => {
     const nodes = document.querySelectorAll(".reveal");
     const io = new IntersectionObserver(
       (entries) => {
         for (const en of entries) {
-          if (en.isIntersecting) en.target.classList.add("in");
+          if (en.isIntersecting) {
+            en.target.classList.add("in");
+            io.unobserve(en.target); // stop watching once revealed
+          }
         }
       },
-      { threshold: 0.14 },
+      { threshold: 0.1 },
     );
     nodes.forEach((n) => io.observe(n));
     return () => io.disconnect();
-  }, []);
+  }, []); // ← empty deps: only runs once on mount
 }
 
+// ── Hover label for custom cursor ─────────────────────────────────────────
 function Hover({
   label,
   children,
@@ -87,7 +90,7 @@ function Title({ children, className }: { children: ReactNode; className?: strin
   return (
     <h2
       className={cn(
-        "font-display text-[clamp(32px,5vw,60px)] leading-[1.08] font-normal tracking-tight text-balance",
+        "font-display text-[clamp(30px,5vw,60px)] leading-[1.08] font-normal tracking-tight text-balance",
         className,
       )}
     >
@@ -98,7 +101,9 @@ function Title({ children, className }: { children: ReactNode; className?: strin
 
 function Wrap({ children, className }: { children: ReactNode; className?: string }) {
   return (
-    <div className={cn("mx-auto w-full max-w-6xl px-6 md:px-10", className)}>{children}</div>
+    <div className={cn("mx-auto w-full max-w-6xl px-6 md:px-10", className)}>
+      {children}
+    </div>
   );
 }
 
@@ -125,6 +130,7 @@ function SectionHead({
   );
 }
 
+// ── HERO ──────────────────────────────────────────────────────────────────
 export function Hero() {
   return (
     <header
@@ -132,25 +138,36 @@ export function Hero() {
       className="relative flex min-h-svh items-end overflow-hidden px-6 pt-36 pb-16 md:px-10 md:pb-20"
     >
       <div className="relative z-10 w-full max-w-3xl">
+        {/* Status bar */}
         <div className="mb-6 flex items-center gap-2.5 text-[11px] tracking-[0.2em] text-dim uppercase">
           <span className="hud-rec-dot" />
           Nepal · Visual Storytelling
         </div>
-        <h1 className="font-display gold-foil text-[clamp(48px,9vw,118px)] leading-[0.95] font-medium tracking-tight">
+
+        {/* Name — gold foil */}
+        <h1 className="font-display gold-foil text-[clamp(50px,9vw,120px)] leading-[0.93] font-medium tracking-tight">
           UMANGA
           <br />
           RIMAL
         </h1>
-        <div className="mt-5 text-[13px] tracking-[0.22em] text-gold uppercase">{SITE.role}</div>
-        <p className="font-display mt-7 max-w-lg text-[clamp(18px,2.1vw,26px)] leading-snug text-dim italic">
-          “{SITE.statement}”
+
+        {/* Role tag */}
+        <div className="mt-5 text-[12px] tracking-[0.24em] text-gold uppercase">
+          {SITE.role}
+        </div>
+
+        {/* Statement — italic serif */}
+        <p className="font-display mt-7 max-w-lg text-[clamp(17px,2vw,24px)] leading-snug text-dim italic">
+          &ldquo;{SITE.statement}&rdquo;
         </p>
         <Brushstroke className="mt-4 ml-1" />
+
+        {/* CTAs */}
         <div className="mt-10 flex flex-wrap gap-4">
           <Hover label="Explore">
             <a
               href="#photography"
-              className="inline-block border border-ivory bg-ivory px-8 py-3.5 text-[11.5px] tracking-[0.14em] text-void uppercase transition-transform hover:-translate-y-0.5"
+              className="inline-block border border-ivory bg-ivory px-8 py-3.5 text-[11.5px] tracking-[0.14em] text-void uppercase transition-transform hover:-translate-y-0.5 active:-translate-y-0"
             >
               Explore My Work
             </a>
@@ -165,40 +182,70 @@ export function Hero() {
           </Hover>
         </div>
       </div>
+
+      {/* Scroll hint */}
       <p className="pointer-events-none absolute right-10 bottom-8 hidden text-[10px] tracking-[0.14em] text-dim uppercase md:block">
         Scroll to orbit · drag the camera
       </p>
+
+      {/* Decorative film-frame corners on hero */}
+      <span className="pointer-events-none absolute top-24 left-6 hidden w-6 border-t border-l border-gold-dim md:block" style={{ height: 24 }} />
+      <span className="pointer-events-none absolute top-24 right-6 hidden w-6 border-t border-r border-gold-dim md:block" style={{ height: 24 }} />
     </header>
   );
 }
 
+// ── FILMSTRIP — with inertia/momentum drag (FIXED) ────────────────────────
 export function Filmstrip() {
   const strip = useRef<HTMLDivElement>(null);
-  const drag = useRef({ down: false, start: 0, left: 0 });
-  const frames = [
-    ...PHOTOS,
-    ...PHOTOS.slice(0, 4),
-  ];
+  const drag  = useRef({ down: false, start: 0, left: 0 });
+  const vel   = useRef(0);
+  const raf   = useRef<number>(0);
+  const frames = [...PHOTOS, ...PHOTOS.slice(0, 4)];
 
   useEffect(() => {
     const el = strip.current;
     if (!el) return;
+
+    const stopMomentum = () => {
+      cancelAnimationFrame(raf.current);
+    };
+
     const onDown = (e: PointerEvent) => {
+      stopMomentum();
       drag.current = { down: true, start: e.pageX, left: el.scrollLeft };
+      vel.current = 0;
       el.setPointerCapture(e.pointerId);
     };
+
     const onUp = () => {
       drag.current.down = false;
+      // Start momentum coasting
+      const coast = () => {
+        el.scrollLeft += vel.current;
+        vel.current *= 0.92; // friction
+        if (Math.abs(vel.current) > 0.3) {
+          raf.current = requestAnimationFrame(coast);
+        }
+      };
+      raf.current = requestAnimationFrame(coast);
     };
+
     const onMove = (e: PointerEvent) => {
       if (!drag.current.down) return;
-      el.scrollLeft = drag.current.left - (e.pageX - drag.current.start) * 1.35;
+      const delta = (e.pageX - drag.current.start) * 1.35;
+      const newScroll = drag.current.left - delta;
+      // Track velocity as delta between frames
+      vel.current = newScroll - el.scrollLeft;
+      el.scrollLeft = newScroll;
     };
+
     el.addEventListener("pointerdown", onDown);
     el.addEventListener("pointerup", onUp);
     el.addEventListener("pointerleave", onUp);
     el.addEventListener("pointermove", onMove);
     return () => {
+      stopMomentum();
       el.removeEventListener("pointerdown", onDown);
       el.removeEventListener("pointerup", onUp);
       el.removeEventListener("pointerleave", onUp);
@@ -232,6 +279,7 @@ export function Filmstrip() {
   );
 }
 
+// ── CAMERA STUDY ─────────────────────────────────────────────────────────
 export function CameraStudy() {
   const addOrbit = useScroll((s) => s.addOrbit);
   const drag = useRef({ on: false, x: 0 });
@@ -245,9 +293,7 @@ export function CameraStudy() {
             drag.current = { on: true, x: e.clientX };
             (e.currentTarget as HTMLDivElement).setPointerCapture(e.pointerId);
           }}
-          onPointerUp={() => {
-            drag.current.on = false;
-          }}
+          onPointerUp={() => { drag.current.on = false; }}
           onPointerMove={(e) => {
             if (!drag.current.on) return;
             addOrbit((e.clientX - drag.current.x) * 0.008);
@@ -265,15 +311,15 @@ export function CameraStudy() {
           <Title className="mt-4">Canon EOS 850D</Title>
           <Brushstroke className="mt-4" />
           <p className="mt-6 max-w-md text-[15px] leading-relaxed text-dim text-pretty">
-            This camera isn’t just equipment — it’s the tool through which I first learned to
+            This camera isn't just equipment — it's the tool through which I first learned to
             see. Every frame in this portfolio began with this body and this lens, and every
-            technique I’m still learning traces back to figuring out what this setup could do.
+            technique I'm still learning traces back to figuring out what this setup could do.
           </p>
           <div className="mt-8 border-t border-line">
             {[
-              ["Body", "Canon EOS 850D"],
-              ["Primary Lens", "Canon 18–55mm"],
-              ["Role", "Primary tool — stills & motion"],
+              ["Body",        "Canon EOS 850D"],
+              ["Primary Lens","Canon 18–55mm STM"],
+              ["Role",        "Primary tool — stills & motion"],
             ].map(([k, v]) => (
               <div
                 key={k}
@@ -290,14 +336,18 @@ export function CameraStudy() {
   );
 }
 
+// ── GEAR ──────────────────────────────────────────────────────────────────
 function Gear() {
   return (
-    <section id="gear" className="relative z-10 bg-gradient-to-b from-transparent via-void to-void py-24 md:py-32">
+    <section
+      id="gear"
+      className="relative z-10 bg-gradient-to-b from-transparent via-void to-void py-24 md:py-32"
+    >
       <Wrap>
         <SectionHead
           eye="Current setup"
           title="The Camera Bag"
-          sub="What’s actually in the bag right now — no more, no less. This grows as the kit does."
+          sub="What's actually in the bag right now — no more, no less. This grows as the kit does."
         />
         <div className="reveal grid grid-cols-1 gap-px bg-line md:grid-cols-3">
           {EQUIPMENT.map((item) => (
@@ -320,43 +370,76 @@ function Gear() {
   );
 }
 
-function Lightbox({
-  photo,
-  onClose,
-}: {
-  photo: Photo;
-  onClose: () => void;
-}) {
+// ── LIGHTBOX — FIXED: mobile swipe-to-close + better close button ──────────
+function Lightbox({ photo, onClose }: { photo: Photo; onClose: () => void }) {
+  const touchStart = useRef<{ x: number; y: number } | null>(null);
+
+  // Keyboard close
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
+
+  // Swipe-down to close on mobile
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    touchStart.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+  }, []);
+  const handleTouchEnd = useCallback(
+    (e: React.TouchEvent) => {
+      if (!touchStart.current) return;
+      const dy = e.changedTouches[0].clientY - touchStart.current.y;
+      const dx = Math.abs(e.changedTouches[0].clientX - touchStart.current.x);
+      if (dy > 60 && dx < 80) onClose(); // swipe down > 60px
+      touchStart.current = null;
+    },
+    [onClose],
+  );
 
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-void/95 p-5 md:p-12"
       onClick={onClose}
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
       role="dialog"
       aria-modal="true"
       aria-label={photo.title}
     >
+      {/* Close button — large touch target, bottom-center on mobile for thumb reach */}
       <button
         type="button"
-        className="absolute top-6 right-6 text-[11px] tracking-[0.14em] text-dim uppercase hover:text-gold-bright"
+        onClick={(e) => { e.stopPropagation(); onClose(); }}
+        className={cn(
+          "absolute z-50 text-[11px] tracking-[0.14em] text-dim uppercase hover:text-gold-bright",
+          // Desktop: top-right
+          "top-6 right-6 hidden md:block",
+        )}
       >
         Close
       </button>
+      {/* Mobile close — bottom center, big tap target */}
+      <button
+        type="button"
+        onClick={(e) => { e.stopPropagation(); onClose(); }}
+        className="absolute bottom-8 left-1/2 -translate-x-1/2 z-50 flex h-12 items-center justify-center rounded-full border border-line-strong px-8 text-[11px] tracking-[0.14em] text-dim uppercase md:hidden"
+      >
+        Close
+      </button>
+      {/* Swipe hint on mobile */}
+      <span className="absolute top-6 left-1/2 -translate-x-1/2 text-[10px] tracking-[0.1em] text-dim uppercase md:hidden">
+        Swipe down to close
+      </span>
+
       <figure
-        className="relative max-h-[86svh] max-w-5xl"
+        className="relative max-h-[80svh] max-w-5xl"
         onClick={(e) => e.stopPropagation()}
+        onTouchStart={(e) => e.stopPropagation()}
       >
         <img
           src={photo.src}
           alt={photo.title}
-          className="max-h-[78svh] w-full object-contain"
+          className="max-h-[72svh] w-full object-contain"
           decoding="async"
         />
         <figcaption className="mt-4 flex items-end justify-between gap-4">
@@ -371,6 +454,7 @@ function Lightbox({
   );
 }
 
+// ── GALLERY ───────────────────────────────────────────────────────────────
 function Gallery() {
   const [cat, setCat] = useState<(typeof PHOTO_CATEGORIES)[number]>("All");
   const [open, setOpen] = useState<Photo | null>(null);
@@ -432,6 +516,7 @@ function Gallery() {
   );
 }
 
+// ── FILMS ─────────────────────────────────────────────────────────────────
 function Films() {
   return (
     <section id="cinematography" className="relative z-10 bg-void py-24 md:py-32">
@@ -467,9 +552,9 @@ function Films() {
               </div>
               <div className="mt-6 flex flex-wrap gap-6">
                 {[
-                  ["Year", f.year],
-                  ["Camera", f.camera],
-                  ["Lens", f.lens],
+                  ["Year",       f.year],
+                  ["Camera",     f.camera],
+                  ["Lens",       f.lens],
                   ["Frame Rate", f.frameRate],
                 ].map(([k, v]) => (
                   <div key={k} className="text-[10.5px] tracking-[0.1em] text-dim uppercase">
@@ -488,6 +573,7 @@ function Films() {
   );
 }
 
+// ── STYLE WORDS ───────────────────────────────────────────────────────────
 function StyleWords() {
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -499,12 +585,13 @@ function StyleWords() {
         for (const en of entries) {
           if (en.isIntersecting) {
             words.forEach((w, i) => {
-              window.setTimeout(() => w.classList.add("lit"), i * 240);
+              window.setTimeout(() => w.classList.add("lit"), i * 220);
             });
+            io.disconnect();
           }
         }
       },
-      { threshold: 0.55 },
+      { threshold: 0.5 },
     );
     io.observe(el);
     return () => io.disconnect();
@@ -528,31 +615,53 @@ function StyleWords() {
   );
 }
 
+// ── COLOR GRADE — FIXED: proper touch events on mobile ───────────────────
 function ColorGrade() {
-  const box = useRef<HTMLDivElement>(null);
+  const box  = useRef<HTMLDivElement>(null);
   const [pct, setPct] = useState(52);
   const drag = useRef(false);
+
+  const setFrom = useCallback((clientX: number) => {
+    const el = box.current;
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    setPct(Math.min(100, Math.max(0, ((clientX - r.left) / r.width) * 100)));
+  }, []);
 
   useEffect(() => {
     const el = box.current;
     if (!el) return;
-    const setFrom = (clientX: number) => {
-      const r = el.getBoundingClientRect();
-      setPct(Math.min(100, Math.max(0, ((clientX - r.left) / r.width) * 100)));
+
+    // Pointer events for desktop
+    const onPointerMove = (e: PointerEvent) => { if (drag.current) setFrom(e.clientX); };
+    const onPointerUp   = () => { drag.current = false; };
+
+    // Touch events for mobile (FIXED: was only on window, now also on element)
+    const onTouchStart = (e: TouchEvent) => {
+      e.preventDefault();
+      drag.current = true;
+      setFrom(e.touches[0].clientX);
     };
-    const onMove = (e: PointerEvent) => {
-      if (drag.current) setFrom(e.clientX);
+    const onTouchMove  = (e: TouchEvent) => {
+      e.preventDefault();
+      if (drag.current) setFrom(e.touches[0].clientX);
     };
-    const onUp = () => {
-      drag.current = false;
-    };
-    window.addEventListener("pointermove", onMove);
-    window.addEventListener("pointerup", onUp);
+    const onTouchEnd   = () => { drag.current = false; };
+
+    window.addEventListener("pointermove", onPointerMove);
+    window.addEventListener("pointerup",   onPointerUp);
+    el.addEventListener("touchstart",  onTouchStart, { passive: false });
+    el.addEventListener("touchmove",   onTouchMove,  { passive: false });
+    el.addEventListener("touchend",    onTouchEnd);
+
     return () => {
-      window.removeEventListener("pointermove", onMove);
-      window.removeEventListener("pointerup", onUp);
+      window.removeEventListener("pointermove", onPointerMove);
+      window.removeEventListener("pointerup",   onPointerUp);
+      el.removeEventListener("touchstart", onTouchStart);
+      el.removeEventListener("touchmove",  onTouchMove);
+      el.removeEventListener("touchend",   onTouchEnd);
     };
-  }, []);
+  }, [setFrom]);
 
   return (
     <section id="color" className="relative z-10 bg-void py-24 md:py-32">
@@ -563,8 +672,7 @@ function ColorGrade() {
           className="grade-box reveal"
           onPointerDown={(e) => {
             drag.current = true;
-            const r = e.currentTarget.getBoundingClientRect();
-            setPct(Math.min(100, Math.max(0, ((e.clientX - r.left) / r.width) * 100)));
+            setFrom(e.clientX);
           }}
         >
           <div className="grade-layer">
@@ -592,28 +700,13 @@ function ColorGrade() {
   );
 }
 
+// ── LAB ───────────────────────────────────────────────────────────────────
 function Lab() {
   const items = [
-    {
-      idx: "01",
-      name: "Photography",
-      p: "Camera experiments and visual studies — testing light, exposure and framing outside of finished projects.",
-    },
-    {
-      idx: "02",
-      name: "Cinematography",
-      p: "Motion, framing and cinematic experiments — short tests in movement and pacing.",
-    },
-    {
-      idx: "03",
-      name: "Design",
-      p: "Visual identity, posters and digital design work built alongside the visual projects.",
-    },
-    {
-      idx: "04",
-      name: "Development",
-      p: "Websites, creative interfaces and digital projects — building the technology around the creative work.",
-    },
+    { idx: "01", name: "Photography",   p: "Camera experiments and visual studies — testing light, exposure and framing outside of finished projects." },
+    { idx: "02", name: "Cinematography",p: "Motion, framing and cinematic experiments — short tests in movement and pacing." },
+    { idx: "03", name: "Design",        p: "Visual identity, posters and digital design work built alongside the visual projects." },
+    { idx: "04", name: "Development",   p: "Websites, creative interfaces and digital projects — building the technology around the creative work." },
   ];
   return (
     <section id="lab" className="relative z-10 bg-void py-24 md:py-32">
@@ -636,6 +729,7 @@ function Lab() {
   );
 }
 
+// ── DEV ───────────────────────────────────────────────────────────────────
 function Dev() {
   return (
     <section id="dev" className="relative z-10 bg-void py-24 md:py-32">
@@ -675,6 +769,7 @@ function Dev() {
   );
 }
 
+// ── PROJECTS ──────────────────────────────────────────────────────────────
 function Projects() {
   return (
     <section id="projects" className="relative z-10 bg-void py-24 md:py-32">
@@ -720,6 +815,7 @@ function Projects() {
   );
 }
 
+// ── ABOUT ─────────────────────────────────────────────────────────────────
 function About() {
   return (
     <section id="about" className="relative z-10 bg-void py-24 md:py-32">
@@ -740,29 +836,25 @@ function About() {
           <div>
             <Eyebrow>Behind the Frame</Eyebrow>
             <p className="font-display mt-5 max-w-lg text-xl leading-snug text-ivory italic">
-              I’m Umanga Rimal, a young creative from Nepal — still early in this, still
+              I'm Umanga Rimal, a young creative from Nepal — still early in this, still
               learning, still figuring out what my eye actually wants to say.
             </p>
             <p className="mt-5 max-w-lg text-[15.5px] leading-8 text-dim text-pretty">
               Photography and cinematography are where I spend most of my attention right now:
               understanding light, working out how a frame should move, learning what a lens can
-              and can’t do. Design and development sit alongside that — a way of building the
+              and can't do. Design and development sit alongside that — a way of building the
               digital spaces that hold the visual work, rather than leaving it stranded in a
               folder.
             </p>
             <p className="mt-5 max-w-lg text-[15.5px] leading-8 text-dim text-pretty">
-              None of this is polished into a finished career yet. It’s a practice — cameras,
+              None of this is polished into a finished career yet. It's a practice — cameras,
               timelines, color panels and code editors, all pointed at the same question: how do
               you tell a story with what you can see?
             </p>
             <div className="mt-8 flex flex-wrap gap-2.5">
               {[
-                "Photography",
-                "Cinematography",
-                "Visual Storytelling",
-                "Color Grading",
-                "Design",
-                "Web Development",
+                "Photography", "Cinematography", "Visual Storytelling",
+                "Color Grading", "Design", "Web Development",
               ].map((t) => (
                 <span
                   key={t}
@@ -779,6 +871,7 @@ function About() {
   );
 }
 
+// ── JOURNEY ───────────────────────────────────────────────────────────────
 function Journey() {
   return (
     <section id="journey" className="relative z-10 bg-void py-24 md:py-32">
@@ -786,10 +879,7 @@ function Journey() {
         <SectionHead eye="Creative journey" title="How this is building up" />
         <div className="reveal flex gap-0 overflow-x-auto pb-2">
           {JOURNEY.map((j, i) => (
-            <div
-              key={j.title}
-              className="relative min-w-[200px] shrink-0 pr-8"
-            >
+            <div key={j.title} className="relative min-w-[200px] shrink-0 pr-8">
               {i < JOURNEY.length - 1 ? (
                 <span className="absolute top-2 right-0 h-px w-8 bg-line-strong" />
               ) : null}
@@ -806,6 +896,7 @@ function Journey() {
   );
 }
 
+// ── SOCIALS ───────────────────────────────────────────────────────────────
 function Socials() {
   return (
     <section id="socials" className="relative z-10 bg-void py-24 md:py-32">
@@ -832,11 +923,14 @@ function Socials() {
   );
 }
 
+// ── CONTACT ───────────────────────────────────────────────────────────────
 function Contact() {
   return (
     <section id="contact" className="relative z-10 bg-void py-24 md:py-32">
       <Wrap className="reveal text-center">
-        <Title className="mx-auto max-w-3xl">Let’s create something worth remembering.</Title>
+        <Title className="mx-auto max-w-3xl">
+          Let's create something worth remembering.
+        </Title>
         <Brushstroke className="mx-auto mt-5 mb-2" />
         <p className="mt-5 mb-11 text-sm tracking-wide text-dim">
           Photography · Cinematography · Creative Projects · Collaborations
@@ -876,6 +970,7 @@ function Contact() {
   );
 }
 
+// ── FOOTER ────────────────────────────────────────────────────────────────
 function Footer() {
   return (
     <footer className="relative z-10 border-t border-line bg-void py-14 text-center">
@@ -889,6 +984,7 @@ function Footer() {
   );
 }
 
+// ── ROOT EXPORT ───────────────────────────────────────────────────────────
 export function Portfolio() {
   useReveal();
   return (

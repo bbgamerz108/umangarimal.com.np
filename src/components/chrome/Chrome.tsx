@@ -32,7 +32,9 @@ export function Loader() {
 export function Grain() {
   return (
     <>
+      {/* Fine animated film grain — drifts via CSS keyframes in styles.css */}
       <div className="grain" aria-hidden="true" />
+      {/* Coarse warm gold-dust overlay — colour-dodge, brightens highlights only */}
       <div className="gold-dust" aria-hidden="true" />
     </>
   );
