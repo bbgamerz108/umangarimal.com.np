@@ -7,18 +7,19 @@ export function SceneCanvas({ fancy }: { fancy: boolean }) {
   return (
     <div className="scene-root" aria-hidden="true">
       <Canvas
-        dpr={fancy ? [1, 1.6] : [1, 1.15]}
+        fallback={<p className="camera-fallback">Your browser does not support the 3D view.</p>}
+        dpr={fancy ? [1, 1.5] : [1, 1.1]}
         gl={{
           antialias: true,
-          alpha: false,
+          alpha: true,
           powerPreference: fancy ? "high-performance" : "default",
           stencil: false,
         }}
-        shadows={fancy ? "percentage" : false}
         onCreated={({ gl }) => {
-          gl.shadowMap.type = THREE.PCFShadowMap;
+          gl.toneMapping = THREE.ACESFilmicToneMapping;
+          gl.toneMappingExposure = 1.15;
         }}
-        camera={{ fov: 34, near: 0.1, far: 80, position: [2.45, 0.58, 4.55] }}
+        camera={{ fov: 38, near: 0.1, far: 80, position: [2.05, 0.48, 3.85] }}
       >
         <Suspense fallback={null}>
           <World fancy={fancy} />

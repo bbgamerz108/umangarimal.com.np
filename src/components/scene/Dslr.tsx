@@ -17,7 +17,7 @@
  *  – D-pad and rear button cluster
  */
 
-import { useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import { RoundedBox } from "@react-three/drei";
 import * as THREE from "three";
@@ -66,6 +66,7 @@ function makeMats() {
 
 export function Dslr() {
   const m = useMemo(() => makeMats(), []);
+  useEffect(() => () => { Object.values(m).forEach(material => material.dispose()); }, [m]);
   const recMat = useRef<THREE.MeshStandardMaterial>(null);
 
   /* Blinking AF-assist / self-timer LED */

@@ -1,14 +1,6 @@
 import { useEffect } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { SceneMount } from "@/components/scene/SceneMount";
-import {
-  Corners,
-  Cursor,
-  Grain,
-  Hud,
-  Loader,
-  Nav,
-} from "@/components/chrome/Chrome";
+import { Grain, Loader, Nav } from "@/components/chrome/Chrome";
 import { Portfolio } from "@/components/portfolio/Portfolio";
 import { useScroll } from "@/lib/scroll";
 
@@ -49,11 +41,7 @@ function Home() {
     <>
       <Loader />
       <Grain />
-      <Cursor />
-      <Corners />
-      <Hud />
       <Nav />
-      <SceneMount />
       <Portfolio />
     </>
   );

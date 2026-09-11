@@ -95,9 +95,8 @@ Do all of this — the routes alone render the disabled branch:
 - **Reading the user:** `useCurrentUser()` is display-only (`null` means
   *loading OR signed out*, so never redirect on it alone); guard on
   `useCurrentUserState()`'s `isPending` instead. Gates (`SignedIn`, `SignedOut`,
-  `RedirectToSignIn`, `UserButton`) live in `@/lib/auth/gates`. Skeleton/flicker
-  rules and cookie-SSR for a zero-flash deployed first paint:
-  `references/session-ui.md`.
+  `SignInGate`, `RedirectToSignIn`, `UserButton`) live in `@/lib/auth/gates`.
+  CTA hard rules, skeleton, and cookie-SSR zero-flash: `references/session-ui.md`.
 - **Per-user data (mandatory):** every server function that touches per-user data
   must use the prewired `authMiddleware` and scope every read **and** write to
   `context.userId` — a Postgres driver has full DB access, so nothing else limits
@@ -108,3 +107,4 @@ Do all of this — the routes alone render the disabled branch:
   Fetch-Metadata sibling isolation are already wired — never weaken them to make
   an error go away (`references/sign-in-methods.md` covers the model and the
   "Invalid origin" fix).
+
