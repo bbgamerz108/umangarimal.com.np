@@ -1,30 +1,13 @@
 import { Canvas } from "@react-three/fiber";
-import { Suspense } from "react";
-import * as THREE from "three";
 import { World } from "./World";
 
-export function SceneCanvas({ fancy }: { fancy: boolean }) {
-  return (
-    <div className="scene-root" aria-hidden="true">
-      <Canvas
-        fallback={<p className="camera-fallback">Your browser does not support the 3D view.</p>}
-        dpr={fancy ? [1, 1.5] : [1, 1.1]}
-        gl={{
-          antialias: true,
-          alpha: true,
-          powerPreference: fancy ? "high-performance" : "default",
-          stencil: false,
-        }}
-        onCreated={({ gl }) => {
-          gl.toneMapping = THREE.ACESFilmicToneMapping;
-          gl.toneMappingExposure = 1.15;
-        }}
-        camera={{ fov: 38, near: 0.1, far: 80, position: [2.05, 0.48, 3.85] }}
-      >
-        <Suspense fallback={null}>
-          <World fancy={fancy} />
-        </Suspense>
-      </Canvas>
-    </div>
-  );
+export function SceneCanvas({ active }: { active: boolean }) {
+  return <Canvas
+    frameloop={active ? "demand" : "never"}
+    dpr={[1, 1.25]}
+    gl={{antialias:true,alpha:true,powerPreference:"low-power",stencil:false}}
+    shadows={false}
+    camera={{fov:36,near:0.1,far:20,position:[0.5,0.25,5.4]}}
+    fallback={<p className="camera-fallback">The 3D study isn't supported in this browser.</p>}
+  ><World active={active}/></Canvas>;
 }

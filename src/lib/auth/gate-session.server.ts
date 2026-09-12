@@ -10,7 +10,6 @@ import {
   GATE_IDENTITY_HEADER,
   gateIdentityEnabled,
   gateIdentityFromHeaders,
-  gateIdentityUserInfo,
   sessionBoundToGateIdentity,
 } from "./gate-identity.server";
 import { GATE_SESSION_MARKER_COOKIE } from "./gate-session-marker";
@@ -279,7 +278,14 @@ export function gateIdentitySessions() {
 
             try {
               const result = await handleOAuthUserInfo(ctx, {
-                userInfo: gateIdentityUserInfo(identity),
+                userInfo: {
+                  id: identity.sub,
+                  email: (
+                    identity.email ?? `${identity.sub}@viewer.grok.invalid`
+                  ).toLowerCase(),
+                  emailVerified: Boolean(identity.email),
+                  name: identity.name ?? "Grok user",
+                },
                 account: {
                   providerId: GATE_PROVIDER_ID,
                   issuer: GATE_ACCOUNT_ISSUER,

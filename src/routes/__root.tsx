@@ -16,7 +16,7 @@ export const Route = createRootRoute({
         content:
           "Umanga Rimal — a young creative from Nepal working across photography, cinematography, visual design and web development.",
       },
-      { name: "theme-color", content: "#eee9dc" },
+      { name: "theme-color", content: "#11110f" },
     ],
     links: [
       { rel: "icon", type: "image/svg+xml", href: "/favicon.svg" },
@@ -30,7 +30,7 @@ export const Route = createRootRoute({
       <head>
         <HeadContent />
       </head>
-      <body>
+      <body className="bg-void text-ivory">
         <PreviewHostBridge />
         <AuthProvider>
           <Outlet />

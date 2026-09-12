@@ -92,7 +92,8 @@ let browser = null;
 try {
   browser = await chromium.launch({
     headless: true,
-    args: ["--no-sandbox", "--disable-dev-shm-usage"],
+    executablePath: process.env.PLAYWRIGHT_EXECUTABLE_PATH || undefined,
+    args: ["--no-sandbox", "--disable-dev-shm-usage", "--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
   });
 
   const viewports = {};
@@ -109,7 +110,8 @@ try {
     // networkidle never settles and would burn the whole timeout.
     const resp = await page.goto(url, { waitUntil: "domcontentloaded", timeout: timeoutMs });
     const status = resp?.status() ?? 0;
-    await page.waitForTimeout(1000);
+    await page.waitForTimeout(1300);
+    await page.evaluate(() => document.fonts.ready);
 
     const title = await page.title();
     const hasCanvas = (await page.locator("canvas").count()) > 0;

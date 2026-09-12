@@ -4,11 +4,7 @@ export function isLoginRequired(result: CallToolResult): boolean {
   return result.ok === false && result.loginRequired === true;
 }
 
-export function isConnectorPending(result: CallToolResult): boolean {
-  return result.ok === false && result.pending === true;
-}
-
-export function isFramed(): boolean {
+function isFramed(): boolean {
   try {
     return window.self !== window.top;
   } catch {

@@ -1,0 +1,135 @@
+{
+  "checks": [
+    {
+      "name": "Hero renders",
+      "passed": true
+    },
+    {
+      "name": "3D is not loaded at the opening",
+      "passed": true
+    },
+    {
+      "name": "Desktop has no horizontal page overflow",
+      "passed": true
+    },
+    {
+      "name": "Wheel over album moves photographs",
+      "passed": true
+    },
+    {
+      "name": "Wheel over album keeps page stationary",
+      "passed": true
+    },
+    {
+      "name": "Wheel outside album scrolls page",
+      "passed": true
+    },
+    {
+      "name": "Album end releases scrolling",
+      "passed": true
+    },
+    {
+      "name": "Photo filters work",
+      "passed": true
+    },
+    {
+      "name": "Photo opens in dialog",
+      "passed": true
+    },
+    {
+      "name": "Lightbox keyboard navigation works",
+      "passed": true
+    },
+    {
+      "name": "Escape closes lightbox",
+      "passed": true
+    },
+    {
+      "name": "Lightbox restores focus",
+      "passed": true
+    },
+    {
+      "name": "WebGL camera produces rendered draw calls",
+      "passed": true
+    },
+    {
+      "name": "Camera makes zero additional draw calls when idle",
+      "passed": true,
+      "detail": {
+        "drawCallsBefore": 56,
+        "drawCallsAfter": 56
+      }
+    },
+    {
+      "name": "Camera redraws on section scroll",
+      "passed": true,
+      "detail": {
+        "additionalDrawCalls": 924
+      }
+    },
+    {
+      "name": "Camera stops drawing after scroll settles",
+      "passed": true
+    },
+    {
+      "name": "Pointer dragging does not rotate camera",
+      "passed": true
+    },
+    {
+      "name": "Creative journey moves automatically",
+      "passed": true
+    },
+    {
+      "name": "Journey enters paused state",
+      "passed": true
+    },
+    {
+      "name": "Journey pause works",
+      "passed": true
+    },
+    {
+      "name": "Camera remains idle off screen",
+      "passed": true
+    },
+    {
+      "name": "Color comparison supports keyboard",
+      "passed": true
+    },
+    {
+      "name": "Mobile has no horizontal page overflow",
+      "passed": true
+    },
+    {
+      "name": "Mobile menu opens",
+      "passed": true
+    },
+    {
+      "name": "Mobile menu closes after navigation",
+      "passed": true
+    },
+    {
+      "name": "Mobile camera remains visible",
+      "passed": true
+    },
+    {
+      "name": "Reduced motion stops automatic journey",
+      "passed": true
+    },
+    {
+      "name": "All page images load",
+      "passed": true
+    },
+    {
+      "name": "No uncaught application errors",
+      "passed": true,
+      "detail": []
+    }
+  ],
+  "pageErrors": [],
+  "failedRequests": [
+    {
+      "url": "https://grok.com/grok-app-builder/extensions.js",
+      "error": "net::ERR_EMPTY_RESPONSE"
+    }
+  ]
+}

@@ -1,132 +1,20 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
+import { Menu, X, ArrowUpRight } from "lucide-react";
 import { NAV, SITE } from "@/lib/content";
-import { useScroll } from "@/lib/scroll";
-import { cn } from "@/lib/cn";
+import * as Dialog from "@radix-ui/react-dialog";
 
 export function Loader() {
-  const [open, setOpen] = useState(false);
-  const [gone, setGone] = useState(false);
-
-  useEffect(() => {
-    const a = window.setTimeout(() => setOpen(true), 120);
-    const b = window.setTimeout(() => setGone(true), 980);
-    return () => {
-      window.clearTimeout(a);
-      window.clearTimeout(b);
-    };
-  }, []);
-
-  return (
-    <div className={cn("loader", open && "is-open", gone && "is-gone")} aria-hidden={gone}>
-      <span className="loader-wordmark">r. umanga*</span>
-      <p className="loader-name">{SITE.name}</p>
-      <span className="loader-sub">est. Kathmandu</span>
-    </div>
-  );
+  const [gone,setGone]=useState(false);
+  useEffect(()=>{const timer=setTimeout(()=>setGone(true),1050);return()=>clearTimeout(timer);},[]);
+  return gone?null:<div className="opening-curtain" aria-hidden="true"><img src="/brand/ru-wordmark-gold.svg" alt=""/><span>PHOTOGRAPHY · CINEMATOGRAPHY</span></div>;
 }
-
-export function Grain() {
-  return <div className="grain" aria-hidden="true" />;
-}
-
-export function Cursor() {
-  const dot = useRef<HTMLDivElement>(null);
-  const ring = useRef<HTMLDivElement>(null);
-  const hovering = useScroll((s) => s.hovering);
-  const albumHover = useScroll((s) => s.albumHover);
-  const rx = useRef(0);
-  const ry = useRef(0);
-  const mx = useRef(0);
-  const my = useRef(0);
-
-  useEffect(() => {
-    const onMove = (e: MouseEvent) => {
-      mx.current = e.clientX;
-      my.current = e.clientY;
-      if (dot.current) {
-        dot.current.style.left = `${e.clientX}px`;
-        dot.current.style.top = `${e.clientY}px`;
-      }
-    };
-    window.addEventListener("mousemove", onMove, { passive: true });
-    let raf = 0;
-    const loop = () => {
-      rx.current += (mx.current - rx.current) * 0.12;
-      ry.current += (my.current - ry.current) * 0.12;
-      if (ring.current) {
-        ring.current.style.left = `${rx.current}px`;
-        ring.current.style.top = `${ry.current}px`;
-      }
-      raf = requestAnimationFrame(loop);
-    };
-    raf = requestAnimationFrame(loop);
-    return () => {
-      window.removeEventListener("mousemove", onMove);
-      cancelAnimationFrame(raf);
-    };
-  }, []);
-
-  const label = albumHover ? "SCROLL ALBUM" : hovering;
-
-  return (
-    <>
-      <div ref={dot} className="cursor-dot" />
-      <div ref={ring} className={cn("cursor-ring", label && "is-on")}>
-        {label}
-      </div>
-    </>
-  );
-}
-
 export function Nav() {
-  const [scrolled, setScrolled] = useState(false);
-  const [open, setOpen] = useState(false);
-  const setHover = useScroll((s) => s.setHovering);
-
-  useEffect(() => {
-    const fn = () => setScrolled(window.scrollY > 40);
-    fn();
-    window.addEventListener("scroll", fn, { passive: true });
-    return () => window.removeEventListener("scroll", fn);
-  }, []);
-
-  return (
-    <>
-      <nav className={cn("site-nav", scrolled && "is-scrolled")}>
-        <a href="#top" className="nav-brand" onMouseEnter={() => setHover("Home")} onMouseLeave={() => setHover(null)}>
-          <span className="wordmark">r. umanga*</span>
-        </a>
-        <div className="nav-links">
-          {NAV.map((n) => (
-            <a
-              key={n.href}
-              href={n.href}
-              onMouseEnter={() => setHover(n.label)}
-              onMouseLeave={() => setHover(null)}
-            >
-              {n.label}
-            </a>
-          ))}
-        </div>
-        <button
-          type="button"
-          className="nav-burger"
-          aria-expanded={open} aria-controls="navigation-drawer" aria-label={open ? "Close menu" : "Open menu"}
-          onClick={() => setOpen((v) => !v)}
-        >
-          <span style={{ transform: open ? "translateY(6px) rotate(45deg)" : "none" }} />
-          <span style={{ opacity: open ? 0 : 1 }} />
-          <span style={{ transform: open ? "translateY(-6px) rotate(-45deg)" : "none" }} />
-        </button>
-      </nav>
-      <div id="navigation-drawer" inert={!open} className={cn("nav-drawer", open && "is-open")} aria-hidden={!open}>
-        {NAV.map((n) => (
-          <a key={n.href} href={n.href} onClick={() => setOpen(false)}>
-            {n.label}
-          </a>
-        ))}
-        <a href={`mailto:${SITE.email}`}>{SITE.email}</a>
-      </div>
-    </>
-  );
+  const [scrolled,setScrolled]=useState(false);
+  const [open,setOpen]=useState(false);
+  useEffect(()=>{const scroll=()=>setScrolled(window.scrollY>50);scroll();addEventListener('scroll',scroll,{passive:true});return()=>removeEventListener('scroll',scroll);},[]);
+  return <nav className={`main-nav ${scrolled?'is-scrolled':''}`} aria-label="Main navigation">
+    <a className="brand-link" href="#top" aria-label="R. Umanga home"><img src="/brand/ru-wordmark-ivory.svg" alt="R. Umanga"/></a>
+    <div className="desktop-nav">{NAV.map(n=><a href={n.href} key={n.href}>{n.label}</a>)}</div>
+    <Dialog.Root open={open} onOpenChange={setOpen}><Dialog.Trigger className="mobile-menu" aria-label="Open menu"><Menu size={24}/></Dialog.Trigger><Dialog.Portal><Dialog.Overlay className="menu-shade"/><Dialog.Content className="menu-panel" aria-describedby={undefined}><Dialog.Title className="sr-only">Navigation</Dialog.Title><Dialog.Close className="menu-close" aria-label="Close menu"><X/></Dialog.Close><img src="/brand/ru-wordmark-gold.svg" alt="R. Umanga"/>{NAV.map((n,i)=><a href={n.href} key={n.href} onClick={()=>setOpen(false)}><span>0{i+1}</span>{n.label}<ArrowUpRight size={22}/></a>)}<a className="menu-instagram" href={SITE.instagram} target="_blank" rel="noreferrer">{SITE.instagramHandle}</a></Dialog.Content></Dialog.Portal></Dialog.Root>
+  </nav>;
 }

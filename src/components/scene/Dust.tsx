@@ -22,7 +22,7 @@ export function Dust({ count = 320 }: { count?: number }) {
   const mat = useMemo(
     () =>
       new THREE.PointsMaterial({
-        color: "#f2c869",
+        color: "#e8d3a0",
         size: 0.028,
         transparent: true,
         opacity: 0.55,
